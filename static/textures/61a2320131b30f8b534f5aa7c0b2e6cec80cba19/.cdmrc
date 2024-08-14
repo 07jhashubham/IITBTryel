@@ -1,0 +1,3 @@
+tabs: ["contracts/WelcomeSolidity.sol"]
+terminals: ["bun install"]
+run-button: truffle compile

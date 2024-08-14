@@ -1,0 +1,41 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  overflow: hidden;
+}
+
+.webgl {
+  position: fixed;
+  top: 0;
+  left: 0;
+  outline: none;
+}
+.label {
+  color: #fff;
+  font-size: 30px; /* Changed from 'size' to 'font-size' */
+  padding: 10px;
+  background: rgba(255, 0, 0, 0.6);
+  border-radius: 5px; /* Rounded corners */
+  position: relative; /* Needed for the callout arrow */
+  border: 2px solid rgba(255, 255, 255, 0.5); /* Optional border for better visibility */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); /* Optional shadow for depth */
+}
+
+.label::after {
+  content: "";
+  position: absolute;
+  bottom: -10px; /* Position the arrow at the bottom */
+  left: 50%; /* Center the arrow horizontally */
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid rgba(255, 0, 0, 0.6); /* Same color as the background */
+}
+
+/* Add this to your CSS file or within a <style> tag in your HTML */

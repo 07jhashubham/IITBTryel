@@ -16,6 +16,7 @@ let camera, scene, renderer;
 let controller1, controller2;
 let controllerGrip1, controllerGrip2;
 let raycaster;
+const initialTransforms = {};
 
 const intersected = [];
 let controls, group, group2, meshBox, meshBox2;
@@ -30,39 +31,17 @@ let gui = null;
 let guiPros = {
   changeX: 0,
   reset: () => {
-    // Reset group2 (jet engine model) position
-    group2.position.set(0, 1.5, 0);
-    if (m2) m2.rotation.set(0, 0, 0);
-
-    // Reset meshBox position and rotation
+    group2.traverse((child) => {
+      if (child.isMesh) {
+        const initial = initialTransforms[child.name];
+        if (initial) {
+          child.position.copy(initial.position);
+          child.rotation.copy(initial.rotation);
+        }
+      }
+    });
     meshBox.position.set(0.3, 1.3, -3.3);
     meshBox.rotation.set(0, Math.PI / 2, 0);
-
-    // Reset meshBox2 position and rotation
-    meshBox2.position.set(
-      -5.4342483200536908,
-      1.643646129672893,
-      -0.5578223438313983
-    );
-    meshBox2.rotation.set(0, 2.7, 0);
-
-    // Reset group3 (GUI group) position and rotation
-    group3.position.set(-1.742483200536908, 2.243646129672893, 1.2);
-    group3.rotation.set(0, 1.5, 0);
-
-    // Remove the existing GUI mesh
-    // group3.remove(guiMesh);
-
-    // // Force redraw the GUI
-    // gui.domElement.style.display = "none";
-    // setTimeout(() => {
-    //   gui.domElement.style.display = "block";
-    // }, 0);
-
-    // // Recreate and reattach the HTMLMesh
-    // guiMesh = new HTMLMesh(gui.domElement);
-    // guiMesh.scale.setScalar(5);
-    // group3.add(guiMesh);
   },
 };
 
@@ -113,6 +92,15 @@ function init() {
     m2 = model.scene;
     meshDrag = model.scene.children;
 
+    model.scene.traverse((child) => {
+      if (child.isMesh) {
+        initialTransforms[child.name] = {
+          position: child.position.clone(),
+          rotation: child.rotation.clone(),
+        };
+      }
+    });
+
     // Initialize GUI after model is loaded
     guiInit();
   });
@@ -134,7 +122,7 @@ function init() {
   );
   meshBox2.position.set(
     -5.4342483200536908,
-    1.643646129672893,
+    2.643646129672893,
     -0.5578223438313983
   );
   meshBox2.scale.set(0.2, 0.2, 0.4);
@@ -237,29 +225,21 @@ function guiInit() {
     options: partNames,
   };
 
-  // Add the dropdown to the GUI
-  const partSelector = gui
-    .add(modelParts, "selectedPart", modelParts.options)
-    .name("Select Part");
+  // Create a folder in the GUI
+  const partFolder = gui.addFolder("Model Parts");
 
-  // Handle part selection with a manual trigger for focusing
-  partSelector.onChange((selectedName) => {
-    // Find the HTML select element
-    const selectElement = gui.domElement.querySelector("select");
+  // Add buttons for each part inside the folder
+  partNames.forEach((partName) => {
+    partFolder
+      .add({ [partName]: () => selectPart(partName) }, partName)
+      .name(partName);
+  });
 
-    // if (selectElement) {
-    //   // Manually trigger focus
-    //   selectElement.focus();
-
-    //   // Manually trigger blur after selection
-    //   setTimeout(() => {
-    //     selectElement.blur();
-    //   }, 500); // Adjust timeout as needed
-    // }
-
+  // Define the function that handles part selection
+  function selectPart(selectedName) {
     // Reset emissive color of all parts
     meshDrag.forEach((part) => {
-      part.material.emissive.r = 0; // Reset blue emissive color
+      part.material.emissive.r = 0; // Reset emissive color
     });
 
     // Find the selected part by name
@@ -267,12 +247,12 @@ function guiInit() {
 
     // Set the emissive color of the selected part
     if (selectedPart) {
-      selectedPart.material.emissive.r = 1; // Set blue emissive color
+      selectedPart.material.emissive.r = 1; // Set emissive color
     }
-  });
+  }
 
   // Initialize other GUI elements as needed
-  const cahangeX = gui.add(guiPros, "changeX").min(-10).max(10);
+  const changeX = gui.add(guiPros, "changeX").min(-10).max(10);
   const reset = gui.add(guiPros, "reset");
 
   guiMesh = new HTMLMesh(gui.domElement);
@@ -393,6 +373,6 @@ const getIntersection = (controller) => {
 
 function animate() {
   meshBox.attach(group2);
-
+  // meshBox2.attach(group3);
   renderer.render(scene, camera);
 }

@@ -112,6 +112,9 @@ function init() {
     group2.position.set(0, 1.5, 0);
     m2 = model.scene;
     meshDrag = model.scene.children;
+
+    // Initialize GUI after model is loaded
+    guiInit();
   });
 
   meshBox = new THREE.Mesh(
@@ -214,8 +217,9 @@ function init() {
 
   window.addEventListener("resize", onWindowResize);
 
-  // Initialize GUI
-  guiIint();
+  group3.listenToXRControllerEvents(controller1);
+  group3.listenToXRControllerEvents(controller2);
+  scene.add(group3);
 }
 
 function onWindowResize() {
@@ -224,16 +228,28 @@ function onWindowResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-group3.listenToXRControllerEvents(controller1);
-group3.listenToXRControllerEvents(controller2);
-scene.add(group3);
-
-function guiIint() {
+function guiInit() {
   gui = new GUI();
 
+  // Create a folder for the parts, and set it to open by default
+  const partFolder = gui.addFolder("Model Parts");
+  partFolder.open();
+
+  meshDrag.forEach((part) => {
+    // Save the original color
+    part.userData.originalColor = part.material.color.clone();
+
+    // Add a button for each part to change its color to immersive red
+    partFolder
+      .add({ select: () => selectPart(part) }, "select")
+      .name(part.name);
+  });
+
+  // Initialize other GUI elements as needed
   const cahangeX = gui.add(guiPros, "changeX").min(-10).max(10);
   const reset = gui.add(guiPros, "reset");
 
+  // Create and add the HTMLMesh for the GUI
   guiMesh = new HTMLMesh(gui.domElement);
   gui.domElement.style.borderRadius = "10px";
   gui.domElement.style.overflow = "hidden";
@@ -245,6 +261,16 @@ function guiIint() {
   group3.position.set(-1.742483200536908, 2.243646129672893, 1.2);
 }
 
+function selectPart(selectedPart) {
+  // Reset all parts to their original color
+  meshDrag.forEach((part) => {
+    part.material.color.copy(part.userData.originalColor);
+  });
+
+  // Set the selected part to immersive red
+  selectedPart.material.color.set("#ff0000");
+}
+
 function onSelectStart(event) {
   const controller = event.target;
 
@@ -254,11 +280,16 @@ function onSelectStart(event) {
     const intersection = intersections[0];
 
     const object = intersection.object;
-    object.material.emissive.b = 1;
-    controller.attach(object);
+    if (object === guiMesh) {
+      // Trigger interaction with GUI
+      gui.domElement.querySelector("select").focus();
+    } else {
+      object.material.emissive.b = 1;
+      controller.attach(object);
 
-    controller.userData.selected = object;
-    isDragging = true;
+      controller.userData.selected = object;
+      isDragging = true;
+    }
   }
 
   controller.userData.targetRayMode = event.data.targetRayMode;
@@ -274,14 +305,18 @@ function onSelectEnd(event) {
 
     controller.userData.selected = undefined;
     isDragging = false;
+
+    // If it's GUI, remove focus
+    if (object === guiMesh) {
+      gui.domElement.querySelector("select").blur();
+    }
   }
 }
+
 function onSelectStart1(event) {
   const controller = event.target;
 
   const intersections = getIntersection(controller);
-  // console.log(intersections);
-
   if (intersections.length > 0) {
     const intersection = intersections[0];
 
@@ -325,8 +360,6 @@ function getIntersections(controller) {
   return [];
 }
 
-// console.log(group.position);
-
 const getIntersection = (controller) => {
   controller.updateMatrixWorld();
 
@@ -338,42 +371,13 @@ const getIntersection = (controller) => {
   const intersections = raycaster.intersectObjects(meshDrag, false);
 
   if (intersections.length > 0) {
-    console.log(intersections[0]);
     return [intersections[0]];
   }
   return [];
 };
 
-function intersectObjects(controller) {
-  if (controller.userData.targetRayMode === "screen") return;
-  if (controller.userData.selected !== undefined) return;
-
-  const line = controller.getObjectByName("line");
-  const intersections = getIntersections(controller);
-
-  if (intersections.length > 0) {
-    const intersection = intersections[0];
-    const object = intersection.object;
-    object.material.emissive.r = 1;
-    intersected.push(object);
-
-    line.scale.z = intersection.distance;
-  } else {
-    line.scale.z = 5;
-  }
-}
-
-function cleanIntersected() {
-  while (intersected.length) {
-    const object = intersected.pop();
-    object.material.emissive.r = 0;
-  }
-}
-
 function animate() {
   meshBox.attach(group2);
-
-  meshBox2.add(group3);
 
   renderer.render(scene, camera);
 }

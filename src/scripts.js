@@ -117,16 +117,16 @@ function init() {
   group.add(meshBox);
 
   meshBox2 = new THREE.Mesh(
-    new THREE.BoxGeometry(0.5, 0.5, 0.5),
+    new THREE.BoxGeometry(5.5, 0.5, 0.5),
     new THREE.MeshStandardMaterial({ color: "blue" })
   );
   meshBox2.position.set(
-    -5.4342483200536908,
+    -3.4342483200536908,
     2.643646129672893,
     -0.5578223438313983
   );
   meshBox2.scale.set(0.2, 0.2, 0.4);
-  meshBox2.rotation.y = 2.7;
+  meshBox2.rotation.y = 1.7;
   group.add(meshBox2);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -262,7 +262,7 @@ function guiInit() {
 
   guiMesh.scale.setScalar(5);
   group3.add(guiMesh);
-  group3.rotation.y = 1.5;
+  // group3.rotation.x = 1.5;
   group3.position.set(-1.742483200536908, 2.243646129672893, 1.2);
 }
 
@@ -373,6 +373,23 @@ const getIntersection = (controller) => {
 
 function animate() {
   meshBox.attach(group2);
-  // meshBox2.attach(group3);
+
+  // Compute the world position and quaternion of meshBox2
+  const boxWorldPosition = new THREE.Vector3();
+  const boxWorldQuaternion = new THREE.Quaternion();
+
+  meshBox2.getWorldPosition(boxWorldPosition);
+  meshBox2.getWorldQuaternion(boxWorldQuaternion);
+
+  // Set group3's position and rotation relative to meshBox2's world transform
+  group3.position.copy(boxWorldPosition);
+  group3.quaternion.copy(boxWorldQuaternion);
+
+  // If needed, you can apply an additional offset or rotation to group3
+  // Example of adding a slight offset in the Z direction (forward)
+  const offset = new THREE.Vector3(0, 0, 1); // Adjust the offset as needed
+  offset.applyQuaternion(boxWorldQuaternion); // Apply the rotation of meshBox2
+  group3.position.add(offset);
+
   renderer.render(scene, camera);
 }

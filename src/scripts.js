@@ -220,15 +220,19 @@ function guiInit() {
   gui = new GUI();
 
   const partNames = meshDrag.map((part) => part.name); // Get names of all parts
+
+  // Add "None" to the list of options
+  partNames.unshift("None");
+
   const modelParts = {
-    selectedPart: partNames[0], // Default to the first part
+    selectedPart: "None", // Default to "None"
     options: partNames,
   };
 
   // Create a folder in the GUI
   const partFolder = gui.addFolder("Model Parts");
 
-  // Add buttons for each part inside the folder
+  // Add buttons for each part inside the folder, including "None"
   partNames.forEach((partName) => {
     partFolder
       .add({ [partName]: () => selectPart(partName) }, partName)
@@ -242,6 +246,11 @@ function guiInit() {
       part.material.emissive.r = 0; // Reset emissive color
     });
 
+    // If "None" is selected, do not highlight any part
+    if (selectedName === "None") {
+      return; // Exit the function, leaving all parts unhighlighted
+    }
+
     // Find the selected part by name
     const selectedPart = meshDrag.find((part) => part.name === selectedName);
 
@@ -252,7 +261,11 @@ function guiInit() {
   }
 
   // Initialize other GUI elements as needed
-  const changeX = gui.add(guiPros, "changeX").min(-10).max(10);
+  const changeX = gui
+    .add(guiPros, "changeX")
+    .min(-5)
+    .max(5)
+    .onChange((value) => {});
   const reset = gui.add(guiPros, "reset");
 
   guiMesh = new HTMLMesh(gui.domElement);
@@ -373,6 +386,10 @@ const getIntersection = (controller) => {
 
 function animate() {
   meshBox.attach(group2);
+
+  if (meshDrag && meshDrag[5]) {
+    meshDrag[5].rotation.x += guiPros.changeX * 0.01; // Adjust the factor for speed control
+  }
 
   // Compute the world position and quaternion of meshBox2
   const boxWorldPosition = new THREE.Vector3();

@@ -10,6 +10,14 @@ import {
 } from "three/examples/jsm/Addons.js";
 import { OculusHandModel } from "three/examples/jsm/Addons.js";
 import GUI from "lil-gui";
+import { io } from "socket.io-client";
+
+const socket = io("https://192.168.0.131:8080", {
+  transports: ["websocket"], // Optionally specify transport methods
+  secure: true, // Ensure secure connections
+});
+
+// socket.emit("event-g", "Raju Rastugi", 54);
 
 let container;
 let camera, scene, renderer;
@@ -109,6 +117,7 @@ function init() {
     new THREE.BoxGeometry(1, 1, 2),
     new THREE.MeshStandardMaterial()
   );
+  meshBox.name = "boxmain";
   scene.add(new THREE.AmbientLight("#ffffff", 4));
 
   meshBox.scale.set(0.2, 0.2, 0.4);
@@ -120,6 +129,7 @@ function init() {
     new THREE.BoxGeometry(5.5, 0.5, 0.5),
     new THREE.MeshStandardMaterial({ color: "blue" })
   );
+  meshBox2.name = "boxtemp";
   meshBox2.position.set(
     -3.4342483200536908,
     2.643646129672893,
@@ -347,6 +357,12 @@ function onSelectEnd1(event) {
     const object = controller.userData.selected;
     object.material.emissive.b = 0;
     group.attach(object);
+
+    socket.emit("drag", {
+      part: object.name,
+      position: object.position,
+      rotation: object.rotation,
+    });
     if (object.userData.originalParent) {
       object.userData.originalParent.attach(object);
       delete object.userData.originalParent; // Clean up the stored reference
@@ -383,6 +399,23 @@ const getIntersection = (controller) => {
   }
   return [];
 };
+
+socket.on("recive-drag", (obj) => {
+  if ((obj.name = "boxtemp")) {
+    meshBox.position.copy(obj.position);
+    meshBox.rotation.copy(obj.rotation);
+  } else if ((obj.name = "boxmain")) {
+    meshBox2.position.copy(obj.position);
+    meshBox2.rotation.copy(obj.rotation);
+  } else {
+    for (let tMesh of meshDrag) {
+      if (tMesh.name === obj.part) {
+        tMesh.position.copy(obj.position);
+        tMesh.rotation.copy(obj.rotation);
+      }
+    }
+  }
+});
 
 function animate() {
   meshBox.attach(group2);
